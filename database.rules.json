@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "quiz": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

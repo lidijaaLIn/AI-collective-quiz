@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a0e18" />
+<title>The AI Collective Serbia — AI Kviz</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brandmark"><img src="logo-white.webp" alt="The AI Collective Serbia" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><span class="fallback" style="display:none">The AI Collective Serbia</span></div>
+      <button class="soundbtn" id="soundBtn">◉ Zvuk uklj.</button>
+    </div>
+
+    <!-- JOIN -->
+    <div class="screen" id="joinScreen">
+      <div class="kicker">Kick Off · 15. septembar 2026.</div>
+      <h1 class="hero">AI<br>Kviz</h1>
+      <div class="rule"></div>
+      <p class="sub">Petnaest pitanja o AI-ju i o zajednici. Trideset sekundi po pitanju — brži odgovor donosi više poena.</p>
+      <div class="chips" style="margin-top:20px">
+        <span class="chip orange">15 pitanja</span>
+        <span class="chip blue">30 s</span>
+        <span class="chip gold">+50 bonus</span>
+      </div>
+      <div style="margin-top:28px">
+        <div class="field-label">Kako se zovete?</div>
+        <input type="text" id="nameInput" placeholder="Vaše ime" maxlength="24" autocomplete="off" />
+        <button class="primary" id="joinBtn">Pridruži se</button>
+        <p class="dim" style="margin-top:14px">Bez naloga i bez instalacije. Držite telefon otvoren tokom kviza.</p>
+      </div>
+    </div>
+
+    <!-- LOBBY / WAIT -->
+    <div class="screen hidden" id="waitScreen">
+      <div class="live"><span class="dot"></span><span id="waitLiveLabel">UŽIVO · čeka se domaćin</span></div>
+      <h1 style="font-size:32px;letter-spacing:-.025em;margin:16px 0 6px;font-weight:800">Vi ste u igri,<br><span style="color:var(--orange)" id="playerNameLabel"></span></h1>
+      <p class="sub" id="waitSubText">Domaćin pokreće kviz sa velikog ekrana. Ne zatvarajte ovu stranicu.</p>
+      <div class="panel accent">
+        <div style="display:flex;align-items:baseline;gap:12px">
+          <div style="font:800 52px/1 Inter,sans-serif;letter-spacing:-.04em" id="lobbyCount">—</div>
+          <div style="font:600 12px/1.3 Inter,sans-serif;color:var(--muted)">u sali<br>prijavljeno</div>
+        </div>
+      </div>
+      <div class="chips" style="margin-top:18px" id="lobbyChips"></div>
+      <div class="panel">
+        <div class="label">Nagrada</div>
+        <div style="font-size:13px;line-height:1.5">Pobednik bira temu naše prve radionice.</div>
+      </div>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="screen hidden" id="questionScreen">
+      <div class="qhead">
+        <div>
+          <div class="qcount" id="qProgress"></div>
+          <div id="streakBadge"></div>
+        </div>
+        <div class="ring" id="qRing"><div id="qTimer">30</div></div>
+      </div>
+      <h2 class="qtext" id="qText"></h2>
+      <div id="optionsWrap"></div>
+      <p class="dim" style="margin-top:18px" id="qHint">Brži odgovor donosi do +50 poena.</p>
+    </div>
+
+    <!-- SUBMITTED -->
+    <div class="screen hidden" id="submittedScreen">
+      <div class="qcount" id="subProgress"></div>
+      <h1 style="font-size:28px;letter-spacing:-.025em;margin:22px 0 6px;font-weight:800">Odgovor poslat</h1>
+      <p class="sub" id="subMeta">Čekamo ostale i domaćina.</p>
+      <div class="answerbox orange" style="margin-top:20px">
+        <div class="label">Vaš odgovor</div>
+        <div style="display:flex;gap:10px;font-size:15px;line-height:1.35"><b style="color:var(--orange)" id="subLetter"></b><span id="subAnswer"></span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Skor</div><div class="v" id="subScore">0</div></div>
+        <div class="stat"><div class="k">Mesto</div><div class="v blue" id="subRank">#—</div></div>
+      </div>
+      <div class="live" style="margin-top:20px"><span class="dot blue"></span><span id="subAnswered">Čekamo ostale...</span></div>
+    </div>
+
+    <!-- REVEAL -->
+    <div class="screen hidden" id="revealScreen">
+      <div class="qcount" id="revProgress"></div>
+      <div class="verdict" id="verdictBox">
+        <div class="big" id="verdictTitle"></div>
+        <div class="small" id="verdictSub"></div>
+      </div>
+      <div class="answerbox">
+        <div class="label">Tačan odgovor</div>
+        <div style="font-size:15px;line-height:1.4" id="correctText"></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">Ukupno</div><div class="v" id="revScore">0</div></div>
+        <div class="stat"><div class="k">Mesto</div><div class="v blue" id="revRank">#—<span class="move" id="revMove"></span></div></div>
+      </div>
+      <div id="revStreak"></div>
+      <p class="dim" style="margin-top:18px">Domaćin prelazi na sledeće pitanje.</p>
+    </div>
+
+    <!-- LEADERBOARD (na telefonu: moje mesto) -->
+    <div class="screen hidden" id="boardScreen">
+      <div class="kicker">Tabela · uživo</div>
+      <h1 style="font-size:32px;letter-spacing:-.03em;margin:12px 0 0;font-weight:800">Trenutno stanje</h1>
+      <div class="rule" style="width:96px"></div>
+      <div class="rows" id="boardRows"></div>
+      <p class="dim" style="margin-top:18px">Puna tabela je na velikom ekranu.</p>
+    </div>
+
+    <!-- FINAL -->
+    <div class="screen hidden" id="finalScreen">
+      <div class="kicker">Kviz je gotov</div>
+      <div class="bignum" id="finalScore" style="margin-top:18px">0</div>
+      <div style="font:600 13px/1.4 Inter,sans-serif;color:var(--muted);margin-top:8px" id="finalMeta"></div>
+      <div class="rule" style="width:110px"></div>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <div class="kv"><span>Tačnih odgovora</span><b id="finalCorrect">0</b></div>
+        <div class="kv"><span>Najduži niz</span><b id="finalStreak">0</b></div>
+        <div class="kv"><span>Bonus za brzinu</span><b class="orange" id="finalBonus">+0</b></div>
+      </div>
+      <div class="panel">
+        <div style="font-size:13px;line-height:1.55">Hvala što ste igrali. Vidimo se na prvoj radionici — temu bira pobednik.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="credit">The AI Collective Serbia · Kick Off · 15. septembar 2026.</footer>
+
+  <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="questions.js"></script>
+  <script src="quiz-db.js"></script>
+  <script>
+  /* ─────────── zvuk (bez audio fajlova) ─────────── */
+  var soundOn = localStorage.getItem("aic_quiz_sound") !== "0";
+  var ac = null;
+  function audio() {
+    if (!soundOn) return null;
+    if (!ac) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; ac = new C(); }
+    if (ac.state === "suspended") ac.resume();
+    return ac;
+  }
+  function tone(f, at, dur, type, vol) {
+    if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + at;
+    o.type = type || "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur + 0.02);
+  }
+  function play(kind) {
+    if (!audio()) return;
+    if (kind === "click") tone(320, 0, 0.07, "triangle", 0.12);
+    else if (kind === "tick") tone(1100, 0, 0.035, "sine", 0.045);
+    else if (kind === "tick2") { tone(1500, 0, 0.05, "sine", 0.08); tone(750, 0.02, 0.05, "sine", 0.05); }
+    else if (kind === "correct") [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { tone(f, i * 0.075, 0.3, "triangle", 0.13); });
+    else if (kind === "wrong") { tone(196, 0, 0.22, "sawtooth", 0.09); tone(146.8, 0.09, 0.28, "sawtooth", 0.08); }
+    else if (kind === "swell") { tone(261.6, 0, 0.5, "sine", 0.07); tone(392, 0.06, 0.5, "sine", 0.06); }
+    else if (kind === "fanfare") {
+      [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(function (f, i) { tone(f, i * 0.1, 0.45, "triangle", 0.14); });
+      [523.25, 659.25, 783.99].forEach(function (f) { tone(f, 0.55, 1.2, "sine", 0.08); });
+    }
+  }
+  var soundBtn = document.getElementById("soundBtn");
+  function paintSoundBtn() { soundBtn.textContent = (soundOn ? "◉ Zvuk uklj." : "○ Zvuk isklj."); }
+  soundBtn.onclick = function () {
+    soundOn = !soundOn;
+    localStorage.setItem("aic_quiz_sound", soundOn ? "1" : "0");
+    paintSoundBtn();
+    if (soundOn) play("click");
+  };
+  paintSoundBtn();
+
+  /* ─────────── konfete ─────────── */
+  var cv = document.getElementById("confetti"), cx = cv.getContext("2d"), parts = [], raf = null;
+  function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+  sizeCanvas(); addEventListener("resize", sizeCanvas);
+  function burst(n, power, delay) {
+    if (delay) { setTimeout(function () { burst(n, power); }, delay); return; }
+    var cols = ["#f97316", "#2076c2", "#e2af6c", "#ffffff", "#fb923c"];
+    for (var i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.1, sp = power * (0.55 + Math.random() * 0.9);
+      parts.push({ x: cv.width / 2 + (Math.random() - 0.5) * 120, y: cv.height * 0.42,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.3, w: 4 + Math.random() * 6, h: 7 + Math.random() * 9,
+        c: cols[(Math.random() * cols.length) | 0], life: 1 });
+    }
+    if (!raf) loop();
+  }
+  function loop() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    parts = parts.filter(function (p) { return p.life > 0 && p.y < cv.height + 40; });
+    parts.forEach(function (p) {
+      p.vy += 0.16; p.vx *= 0.995; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      if (p.y > cv.height * 0.75) p.life -= 0.02;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.globalAlpha = Math.max(0, Math.min(1, p.life)); cx.fillStyle = p.c;
+      cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+    });
+    raf = parts.length ? requestAnimationFrame(loop) : null;
+  }
+
+  /* ─────────── lokalna statistika (niz, bonus, prethodno mesto) ─────────── */
+  var LS = {
+    get: function (k, d) { var v = localStorage.getItem("aic_quiz_" + k); return v === null ? d : Number(v); },
+    set: function (k, v) { localStorage.setItem("aic_quiz_" + k, String(v)); },
+    clear: function () { ["streak", "beststreak", "correct", "bonus", "prevrank"].forEach(function (k) { localStorage.removeItem("aic_quiz_" + k); }); }
+  };
+
+  /* ─────────── ekrani ─────────── */
+  var SCREENS = ["joinScreen", "waitScreen", "questionScreen", "submittedScreen", "revealScreen", "boardScreen", "finalScreen"];
+  function showOnly(id) {
+    SCREENS.forEach(function (s) { document.getElementById(s).classList.toggle("hidden", s !== id); });
+  }
+  var LETTERS = ["A", "B", "C", "D"];
+  var hasJoined = !!localStorage.getItem("aic_quiz_player_id") && !!localStorage.getItem("aic_quiz_player_name");
+  var myName = localStorage.getItem("aic_quiz_player_name") || "";
+  var lastState = null, answeredFor = null, timeUpFor = null, revealedFor = null, tick = null;
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+
+  /* tajmer */
+  function clearTick() { if (tick) { clearInterval(tick); tick = null; } }
+  function paintRing(remaining) {
+    var pct = Math.max(0, Math.round((remaining / QUESTION_TIME_SEC) * 100));
+    var col = remaining <= 0 ? "var(--dim)" : remaining <= 5 ? "var(--orange)" : "var(--blue)";
+    var ring = document.getElementById("qRing"), num = document.getElementById("qTimer");
+    ring.style.background = "conic-gradient(" + (remaining <= 0 ? "#5a6480" : remaining <= 5 ? "#f97316" : "#2076c2") + " " + pct + "%, rgba(174,184,204,.14) 0)";
+    num.style.color = col;
+    num.textContent = remaining > 0 ? remaining : "0";
+  }
+  function startTick(state) {
+    clearTick();
+    var run = function () {
+      var remaining = QUESTION_TIME_SEC - Math.floor((serverNow() - (state.questionStartedAt || serverNow())) / 1000);
+      paintRing(remaining);
+      if (remaining <= 0) {
+        document.getElementById("qHint").textContent = "Vreme je isteklo — čekamo domaćina.";
+        if (timeUpFor !== state.qIndex) {
+          timeUpFor = state.qIndex;
+          Array.prototype.forEach.call(document.getElementById("optionsWrap").children, function (b) { b.disabled = true; });
+        }
+        clearTick();
+      } else if (remaining <= 6) play(remaining <= 3 ? "tick2" : "tick");
+    };
+    run();
+    tick = setInterval(run, 1000);
+  }
+
+  /* mesto na tabeli — remi deli mesto */
+  function myRankNow() {
+    return playersRef.once("value").then(function (snap) {
+      var raw = snap.val() || {};
+      var id = getOrCreatePlayerId();
+      var players = Object.keys(raw).map(function (k) { return { id: k, name: raw[k].name, score: raw[k].score || 0 }; });
+      if (hasJoined && !raw[id]) {
+        localStorage.removeItem("aic_quiz_player_id");
+        localStorage.removeItem("aic_quiz_player_name");
+        LS.clear();
+        hasJoined = false; myName = "";
+        showOnly("joinScreen");
+        return { rank: 0, score: 0, total: players.length, players: players, id: id, gone: true };
+      }
+      var myScore = (raw[id] && raw[id].score) || 0;
+      var ahead = players.filter(function (p) { return p.score > myScore; }).length;
+      return { rank: ahead + 1, score: myScore, total: players.length, players: players, id: id };
+    });
+  }
+  function moveMarkup(delta) {
+    if (!delta) return '<span class="move flat">—</span>';
+    return delta > 0 ? '<span class="move up">▲ ' + delta + "</span>" : '<span class="move down">▼ ' + Math.abs(delta) + "</span>";
+  }
+
+  /* opcije */
+  function renderOptions(question, state) {
+    var wrap = document.getElementById("optionsWrap");
+    wrap.innerHTML = "";
+    question.options.forEach(function (opt, i) {
+      var btn = document.createElement("button");
+      btn.className = "option";
+      btn.style.animationDelay = (i * 70) + "ms";
+      btn.innerHTML = '<span class="letter">' + LETTERS[i] + "</span><span>" + esc(opt) + "</span>";
+      btn.onclick = function () {
+        if (answeredFor === state.qIndex || timeUpFor === state.qIndex) return;
+        answeredFor = state.qIndex;
+        play("click");
+        clearTick();
+        Array.prototype.forEach.call(wrap.children, function (b) { b.disabled = true; });
+        btn.classList.add("selected");
+        var elapsed = Math.round((serverNow() - (state.questionStartedAt || serverNow())) / 1000);
+        submitAnswer(state.qIndex, i, state.questionStartedAt).then(function (res) {
+          if (res.correct) {
+            var st = LS.get("streak", 0) + 1;
+            LS.set("streak", st);
+            LS.set("beststreak", Math.max(LS.get("beststreak", 0), st));
+            LS.set("correct", LS.get("correct", 0) + 1);
+            LS.set("bonus", LS.get("bonus", 0) + Math.max(0, res.points - 100));
+          } else LS.set("streak", 0);
+          document.getElementById("subProgress").innerHTML = "Pitanje " + (state.qIndex + 1) + " <span>/ " + QUESTIONS.length + "</span>";
+          document.getElementById("subMeta").textContent = "Zaključano za " + elapsed + " s. Čekamo ostale i domaćina.";
+          document.getElementById("subLetter").textContent = LETTERS[i];
+          document.getElementById("subAnswer").textContent = opt;
+          myRankNow().then(function (r) {
+            LS.set("prevrank", r.rank);
+            document.getElementById("subScore").textContent = r.score;
+            document.getElementById("subRank").textContent = "#" + r.rank;
+          });
+          showOnly("submittedScreen");
+        });
+      };
+      wrap.appendChild(btn);
+    });
+  }
+
+  /* lobby lista */
+  playersRef.on("value", function (snap) {
+    var players = Object.values(snap.val() || {});
+    document.getElementById("lobbyCount").textContent = players.length;
+    document.getElementById("lobbyChips").innerHTML = players.slice(0, 14).map(function (p, i) {
+      return '<span class="chip" style="animation-delay:' + (i * 40) + 'ms">' + esc(p.name) + "</span>";
+    }).join("");
+    if (lastState && lastState.status === "question") {
+      var n = players.length;
+      answersRef.child(lastState.qIndex).once("value").then(function (s2) {
+        var a = s2.val() ? Object.keys(s2.val()).length : 0;
+        document.getElementById("subAnswered").textContent = a + " od " + n + " je odgovorilo";
+      });
+    }
+  });
+
+  document.getElementById("joinBtn").onclick = function () {
+    var name = document.getElementById("nameInput").value.trim();
+    if (!name) return;
+    audio(); play("click");
+    document.getElementById("joinBtn").disabled = true;
+    joinAsPlayer(name).then(function () {
+      localStorage.setItem("aic_quiz_player_name", name);
+      LS.clear();
+      myName = name; hasJoined = true;
+      document.getElementById("playerNameLabel").textContent = name;
+      render(lastState);
+    });
+  };
+  document.getElementById("nameInput").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") document.getElementById("joinBtn").click();
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") stateRef.once("value").then(function (s) { render(s.val()); });
+  });
+
+  function render(state) {
+    lastState = state;
+    document.getElementById("playerNameLabel").textContent = myName;
+
+    if (!state || !state.status) {
+      clearTick();
+      if (!hasJoined) { showOnly("joinScreen"); return; }
+      document.getElementById("waitLiveLabel").textContent = "UŽIVO · čeka se domaćin";
+      document.getElementById("waitSubText").textContent = "Domaćin pokreće kviz sa velikog ekrana. Ne zatvarajte ovu stranicu.";
+      showOnly("waitScreen");
+      return;
+    }
+    if (!hasJoined) { showOnly("joinScreen"); return; }
+
+    if (state.status === "question") {
+      var q = QUESTIONS[state.qIndex];
+      if (answeredFor === state.qIndex) { clearTick(); showOnly("submittedScreen"); return; }
+      document.getElementById("qProgress").innerHTML = "Pitanje " + (state.qIndex + 1) + " <span>/ " + QUESTIONS.length + "</span>";
+      var st = LS.get("streak", 0);
+      document.getElementById("streakBadge").innerHTML = st >= 2 ? '<span class="streak">×' + st + " u nizu</span>" : "";
+      document.getElementById("qText").textContent = q.q;
+      document.getElementById("qHint").textContent = "Brži odgovor donosi do +50 poena.";
+      renderOptions(q, state);
+      showOnly("questionScreen");
+      if (timeUpFor === state.qIndex) {
+        clearTick(); paintRing(0);
+        document.getElementById("qHint").textContent = "Vreme je isteklo — čekamo domaćina.";
+        Array.prototype.forEach.call(document.getElementById("optionsWrap").children, function (b) { b.disabled = true; });
+      } else startTick(state);
+
+    } else if (state.status === "reveal") {
+      clearTick();
+      var q2 = QUESTIONS[state.qIndex];
+      var id = getOrCreatePlayerId();
+      document.getElementById("revProgress").innerHTML = "Pitanje " + (state.qIndex + 1) + " <span>/ " + QUESTIONS.length + "</span>";
+      answersRef.child(state.qIndex).child(id).once("value").then(function (snap) {
+        var mine = snap.val();
+        var box = document.getElementById("verdictBox");
+        var ok = !!(mine && mine.correct);
+        box.className = "verdict " + (ok ? "ok" : "no");
+        document.getElementById("verdictTitle").textContent = ok ? "Tačno" : mine ? "Netačno" : "Bez odgovora";
+        document.getElementById("verdictSub").textContent = ok ? "+" + mine.points + " poena" : mine ? "0 poena za ovo pitanje" : "Niste odgovorili na vreme";
+        document.getElementById("correctText").textContent = q2.options[q2.correct];
+        var stk = LS.get("streak", 0);
+        document.getElementById("revStreak").innerHTML = stk >= 2
+          ? '<div style="margin-top:12px;display:flex;align-items:center;gap:10px;padding:12px 15px;border-radius:14px;background:linear-gradient(100deg,rgba(249,115,22,.2),rgba(226,175,108,.12));animation:pop .4s ease both"><span style="font:800 11px/1 Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--orange)">Niz</span><span style="font-size:13px">' + stk + " tačna odgovora u nizu. Nastavite.</span></div>"
+          : "";
+        myRankNow().then(function (r) {
+          var prev = LS.get("prevrank", 0);
+          document.getElementById("revScore").textContent = r.score;
+          document.getElementById("revRank").innerHTML = "#" + r.rank + (prev ? moveMarkup(prev - r.rank) : "");
+          LS.set("prevrank", r.rank);
+        });
+        if (revealedFor !== state.qIndex) {
+          revealedFor = state.qIndex;
+          if (ok) { play("correct"); burst(70, Math.min(14, cv.width / 46)); } else play("wrong");
+        }
+        showOnly("revealScreen");
+      });
+
+    } else if (state.status === "leaderboard") {
+      clearTick();
+      myRankNow().then(function (r) {
+        if (r.gone) return;
+        var sorted = r.players.slice().sort(function (a, b) { return b.score - a.score; });
+        var meScore = r.score;
+        var html = sorted.slice(0, 6).map(function (p, i) {
+          var isMe = p.id === r.id;
+          return '<div class="row ' + (isMe ? "me" : "") + '" style="animation-delay:' + (i * 50) + 'ms"><span class="rank">#' + (i + 1) + '</span><span class="pname">' + esc(p.name) + (isMe ? " · vi" : "") + '</span><span class="mv"></span><span class="pscore">' + p.score + "</span></div>";
+        }).join("");
+        if (r.rank > 6) html += '<div class="row me"><span class="rank">#' + r.rank + '</span><span class="pname">' + esc(myName) + ' · vi</span><span class="mv"></span><span class="pscore">' + meScore + "</span></div>";
+        document.getElementById("boardRows").innerHTML = html;
+        showOnly("boardScreen");
+      });
+
+    } else if (state.status === "end") {
+      clearTick();
+      myRankNow().then(function (r) {
+        if (r.gone) return;
+        document.getElementById("finalScore").textContent = r.score;
+        document.getElementById("finalMeta").textContent = "poena · " + r.rank + ". mesto od " + r.total;
+        document.getElementById("finalCorrect").textContent = LS.get("correct", 0) + " / " + QUESTIONS.length;
+        document.getElementById("finalStreak").textContent = LS.get("beststreak", 0);
+        document.getElementById("finalBonus").textContent = "+" + LS.get("bonus", 0);
+        showOnly("finalScreen");
+        if (revealedFor !== "end") {
+          revealedFor = "end";
+          if (r.rank === 1) { play("fanfare"); burst(160, Math.min(16, cv.width / 40)); burst(100, 12, 900); }
+          else play("swell");
+        }
+      });
+    }
+  }
+
+  stateRef.on("value", function (snap) { render(snap.val()); });
+
+  /* host je resetovao sesiju — vrati telefon na unos imena */
+  (function () {
+    if (!hasJoined) return;
+    var id = getOrCreatePlayerId();
+    playersRef.child(id).once("value").then(function (snap) {
+      if (!snap.val()) {
+        localStorage.removeItem("aic_quiz_player_id");
+        localStorage.removeItem("aic_quiz_player_name");
+        LS.clear();
+        hasJoined = false; myName = "";
+        render(lastState);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

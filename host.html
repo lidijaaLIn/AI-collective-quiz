@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Kviz — Host ekran</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body class="host">
+  <template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0a0e18"/><circle cx="50" cy="50" r="24" fill="none" stroke="#f97316" stroke-width="9" stroke-dasharray="120 40" transform="rotate(-40 50 50)"/></svg></template>
+  <canvas id="confetti"></canvas>
+  <div style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;gap:10px;align-items:center">
+    <button id="resetBtn" style="padding:9px 15px;border:2px solid #f97316;border-radius:10px;background:#f97316;color:#0a0e18;font:800 12px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.5)">Resetuj sesiju</button>
+    <button id="soundBtn" style="padding:9px 13px;border:2px solid rgba(233,233,237,.32);border-radius:10px;background:rgba(10,14,24,.72);color:#e9e9ed;font:800 12px/1 Inter,system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">Zvuk</button>
+  </div>
+  <div class="stage">
+    <div class="hosthead">
+      <div class="brandmark"><img src="logo-white.webp" alt="The AI Collective Serbia" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" /><span class="fallback" style="display:none">The AI Collective Serbia</span></div>
+      <div class="when">Kick Off · 15. septembar 2026.</div>
+    </div>
+
+    <!-- LOBBY -->
+    <div class="hostbody split" id="lobbyScreen">
+      <div style="flex:1">
+        <h1 class="hosthero">AI Kviz</h1>
+        <div class="hostrule"></div>
+        <p class="hostlead">Skenirajte kod telefonom, unesite ime i sačekajte. Petnaest pitanja, trideset sekundi po pitanju.</p>
+        <div class="hostcount"><div class="n" id="lobbyCount">0</div><div class="t">prijavljenih<br>igrača</div></div>
+        <div class="hostchips" id="lobbyPlayerList"></div>
+        <div id="lobbyMore"></div>
+        <div class="hostbtns">
+          <button class="go" id="startBtn">Pokreni kviz</button>
+        </div>
+      </div>
+      <div style="flex:none">
+        <div class="qr-box"><div id="qrCanvas"></div></div>
+        <div class="qr-cap" id="playerUrlLabel"></div>
+      </div>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="hostbody hidden" id="qScreen">
+      <div class="hostqhead">
+        <div class="hostqcount" id="qProgressHost"></div>
+        <div class="hostring" id="hostRing"><div id="qTimerHost">30</div></div>
+      </div>
+      <h2 class="hostq" id="qTextHost"></h2>
+      <div class="hostopts" id="optionListHost"></div>
+      <div class="hostfoot">
+        <div class="n" id="answeredCount">0</div>
+        <div class="t" id="answeredOf">od 0 je odgovorilo</div>
+        <div style="margin-left:auto"><button class="go" id="revealBtn" style="min-height:56px;padding:0 26px;border:none;border-radius:14px;font:800 16px/1 Inter,sans-serif;background:linear-gradient(100deg,#f97316,#fb923c);color:#0a0e18;cursor:pointer">Otkrij odgovor</button></div>
+      </div>
+    </div>
+
+    <!-- REVEAL -->
+    <div class="hostbody hidden" id="revealScreenHost">
+      <div class="hostqcount" id="revProgressHost"></div>
+      <h2 class="hostq" style="font-size:clamp(26px,3vw,54px);margin-top:2vh" id="qTextRevealHost"></h2>
+      <div id="barsWrap" style="margin-top:2vh"></div>
+      <div class="hostfoot">
+        <div class="t" id="correctLine"></div>
+        <div style="margin-left:auto"><button class="go" id="nextBtn" style="min-height:56px;padding:0 26px;border:none;border-radius:14px;font:800 16px/1 Inter,sans-serif;background:linear-gradient(100deg,#f97316,#fb923c);color:#0a0e18;cursor:pointer">Sledeće pitanje</button></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="hostbody hidden" id="leaderboardScreen">
+      <h2 class="hosttitle">Tabela</h2>
+      <div class="hostrule" style="width:220px;margin-top:22px"></div>
+      <div style="font:600 clamp(14px,1.3vw,26px)/1 Inter,sans-serif;color:var(--muted)" id="boardAfter"></div>
+      <div class="hostrows" id="leaderboardList"></div>
+      <div id="boardMore"></div>
+      <div class="hostbtns"><button class="go" id="finalBtn">Prikaži pobednika</button></div>
+    </div>
+
+    <!-- WINNER -->
+    <div class="winwrap hidden" id="finalScreenHost">
+      <div class="winbg"><span id="winnerBg"></span></div>
+      <div class="winfg">
+        <div class="kicker" style="font-size:clamp(14px,1.4vw,24px);letter-spacing:.22em">Pobednik</div>
+        <h1 class="winner" id="winnerName"></h1>
+        <div class="hostrule" style="width:340px;height:8px;margin:40px 0 32px"></div>
+        <p style="margin:0;font:600 clamp(18px,2vw,38px)/1.5 Inter,sans-serif"><span style="color:var(--orange)" id="winnerScore"></span> poena — bira šta Srbija gradi za Hack for Humanity.</p>
+        <div class="hostbtns" style="margin-top:44px"><button class="go" id="themeBtn">Izbor teme</button></div>
+      </div>
+    </div>
+
+    <!-- IZBOR TEME -->
+    <div class="hostbody hidden" id="themeScreen" style="overflow:hidden">
+      <div class="hostqcount" id="themeWinnerLine"></div>
+      <h2 class="hosttitle" style="margin-top:.4vh;font-size:clamp(30px,4.4vw,72px)">Koji problem gradimo?</h2>
+      <div class="hostrule" style="width:200px;margin:12px 0 0;height:5px"></div>
+      <p style="margin:10px 0 0;font:500 clamp(12px,1.25vw,24px)/1.45 Inter,sans-serif;color:var(--muted);max-width:70ch">Hack for Humanity, globalni civilni hakaton The AI Collective-a. Build dan je jedna subota u oktobru, predaja do 31. oktobra.</p>
+      <div id="themeGrid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:clamp(10px,1.2vw,22px);margin-top:1.6vh;flex:1;min-height:0"></div>
+      <div id="themePicked" style="margin-top:1.4vh;font:700 clamp(15px,1.5vw,28px)/1.3 Inter,sans-serif;color:var(--orange);min-height:1.3em;flex:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-database-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="questions.js"></script>
+  <script src="quiz-db.js"></script>
+  <script>
+  var LETTERS = ["A", "B", "C", "D"];
+  var SCREENS = ["lobbyScreen", "qScreen", "revealScreenHost", "leaderboardScreen", "finalScreenHost", "themeScreen"];
+  function showOnly(id) { SCREENS.forEach(function (s) { document.getElementById(s).classList.toggle("hidden", s !== id); }); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+
+  /* konfete na pobedniku */
+  var cv = document.getElementById("confetti"), cx = cv.getContext("2d"), parts = [], raf = null;
+  function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+  sizeCanvas(); addEventListener("resize", sizeCanvas);
+  function burst(n, power, delay) {
+    if (delay) { setTimeout(function () { burst(n, power); }, delay); return; }
+    var cols = ["#f97316", "#2076c2", "#e2af6c", "#ffffff", "#fb923c"];
+    for (var i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, sp = power * (0.55 + Math.random() * 0.9);
+      parts.push({ x: cv.width / 2 + (Math.random() - 0.5) * cv.width * 0.5, y: cv.height * 0.55,
+        vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+        w: 6 + Math.random() * 10, h: 10 + Math.random() * 16, c: cols[(Math.random() * cols.length) | 0], life: 1 });
+    }
+    if (!raf) loop();
+  }
+  function loop() {
+    cx.clearRect(0, 0, cv.width, cv.height);
+    parts = parts.filter(function (p) { return p.life > 0 && p.y < cv.height + 60; });
+    parts.forEach(function (p) {
+      p.vy += 0.2; p.vx *= 0.996; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      if (p.y > cv.height * 0.8) p.life -= 0.015;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+      cx.globalAlpha = Math.max(0, Math.min(1, p.life)); cx.fillStyle = p.c;
+      cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+    });
+    raf = parts.length ? requestAnimationFrame(loop) : null;
+  }
+
+  /* QR */
+  var playerUrl = location.origin + location.pathname.replace(/host\.html$/, "index.html") +
+    (SESSION_ID === "kickoff" ? "" : "?session=" + SESSION_ID);
+  document.getElementById("playerUrlLabel").textContent = playerUrl.replace(/^https?:\/\//, "");
+  if (SESSION_ID !== "kickoff") {
+    var badge = document.createElement("div");
+    badge.textContent = "TEST SESIJA: " + SESSION_ID;
+    badge.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:99;padding:7px 16px;border-radius:999px;border:1px solid #f97316;background:rgba(249,115,22,.16);color:#f97316;font:800 12px/1 Inter,sans-serif;letter-spacing:.14em";
+    document.body.appendChild(badge);
+  }
+  new QRCode(document.getElementById("qrCanvas"), { text: playerUrl, width: 300, height: 300, colorDark: "#0a0e18", colorLight: "#ffffff" });
+
+  /* tajmer */
+  /* ═══════ TEME ZA IZBOR — Lidija menja samo ova četiri reda ═══════ */
+  var THEMES = [
+    { t: "Prevodilac sa administrativnog na ljudski",
+      d: "Zalepi re\u0161enje iz eUprave, dobij objašnjenje koje se razume. Pristupačnost." },
+    { t: "Prvih pet sati sa AI-jem",
+      d: "Otvoreni kurikulum na srpskom, koji bilo ko može da odnese u svoju firmu ili školu. Tehnička pismenost." },
+    { t: "Šta AI radi mom poslu",
+      d: "Mapa zanimanja u Srbiji koja pošteno pokazuje koji delovi posla se menjaju prvi. Transformacija poslova." },
+    { t: "AI readiness self-check za male firme",
+      d: "Besplatan upitnik koji firmi od deset ljudi kaže gde stvarno stoji. Lokalni izazov." }
+  ];
+
+  /* ─────────── zvuk hosta (sintetizovan, bez fajlova) ─────────── */
+  var soundOn = localStorage.getItem("aic_host_sound") !== "0";
+  var ac = null, master = null;
+  function audio() {
+    if (!soundOn) return null;
+    if (!ac) {
+      var C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+      ac = new C(); master = ac.createGain(); master.gain.value = 0.62; master.connect(ac.destination);
+    }
+    if (ac.state === "suspended") ac.resume();
+    return ac;
+  }
+  function tone(f, at, dur, type, vol) {
+    if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + at;
+    o.type = type || "triangle"; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || 0.15, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function seq(notes, type, vol) { notes.forEach(function (n) { tone(n[0], n[1], n[2], type, vol); }); }
+  var SFX = {
+    start: function () { if (!audio()) return; seq([[523,0,.16],[659,.11,.16],[784,.22,.16],[1047,.34,.5]], "triangle", .22); },
+    question: function () { if (!audio()) return; seq([[659,0,.14],[988,.12,.26]], "triangle", .28); tone(1319, .12, .34, "sine", .14); },
+    tick: function (urgent) { if (!audio()) return; tone(urgent ? 1660 : 1245, 0, urgent ? .09 : .07, "square", urgent ? .3 : .17); tone(urgent ? 415 : 311, 0, .06, "triangle", .12); },
+    timeUp: function () { if (!audio()) return; tone(196, 0, .34, "sawtooth", .2); tone(147, .02, .4, "triangle", .16); },
+    reveal: function (frac) {
+      if (!audio()) return;
+      seq([[392,0,.09],[440,.07,.09],[494,.14,.09]], "triangle", .12);
+      if (frac >= 0.5) seq([[784,.3,.15],[988,.42,.15],[1175,.54,.15],[1568,.66,.6]], "triangle", .24);
+      else seq([[494,.32,.3],[392,.5,.5]], "sine", .17);
+    },
+    board: function () { if (!audio()) return; seq([[440,0,.07],[554,.06,.07],[659,.12,.07],[880,.18,.07],[1047,.24,.2]], "sine", .13); },
+    winner: function () {
+      if (!audio()) return;
+      seq([[523,0,.18],[659,.13,.18],[784,.26,.18],[1047,.39,.45]], "triangle", .26);
+      seq([[1047,.85,.16],[1319,.98,.5]], "triangle", .24);
+      seq([[1568,1.7,.8],[1047,1.72,.9]], "triangle", .22);
+    },
+    themePick: function () { if (!audio()) return; seq([[659,0,.14],[988,.11,.16],[1319,.23,.55]], "triangle", .26); }
+  };
+  document.addEventListener("click", function () { audio(); });
+  var soundBtn = document.getElementById("soundBtn");
+  function paintSoundBtn() {
+    soundBtn.textContent = soundOn ? "Zvuk" : "Zvuk isključen";
+    soundBtn.style.opacity = soundOn ? "1" : ".55";
+  }
+  soundBtn.onclick = function () {
+    soundOn = !soundOn;
+    localStorage.setItem("aic_host_sound", soundOn ? "1" : "0");
+    paintSoundBtn();
+    if (soundOn) SFX.question();
+  };
+  paintSoundBtn();
+
+  var hostTick = null, lastTickSec = null;
+  function clearHostTick() { if (hostTick) { clearInterval(hostTick); hostTick = null; } lastTickSec = null; }
+  function startHostTick(startedAt) {
+    clearHostTick();
+    var ring = document.getElementById("hostRing"), num = document.getElementById("qTimerHost");
+    var run = function () {
+      var r = QUESTION_TIME_SEC - Math.floor((serverNow() - (startedAt || serverNow())) / 1000);
+      var pct = Math.max(0, Math.round((r / QUESTION_TIME_SEC) * 100));
+      var hex = r <= 0 ? "#5a6480" : r <= 5 ? "#f97316" : "#2076c2";
+      ring.style.background = "conic-gradient(" + hex + " " + pct + "%, rgba(174,184,204,.14) 0)";
+      num.style.color = hex;
+      num.textContent = r > 0 ? r : "0";
+      if (r !== lastTickSec) {
+        if (r > 0 && r <= 10) SFX.tick(r <= 5);
+        else if (r <= 0 && lastTickSec !== null) SFX.timeUp();
+        lastTickSec = r;
+      }
+      if (r <= 0) clearHostTick();
+    };
+    run();
+    hostTick = setInterval(run, 250);
+  }
+
+  /* igrači */
+  var playerCount = 0, prevScores = {};
+  function listPlayers(raw) {
+    raw = raw || {};
+    return Object.keys(raw).map(function (k) { return { id: k, name: raw[k].name, score: raw[k].score || 0 }; });
+  }
+  playersRef.on("value", function (snap) {
+    var players = listPlayers(snap.val());
+    playerCount = players.length;
+    document.getElementById("lobbyCount").textContent = players.length;
+    var box = document.getElementById("lobbyPlayerList");
+    box.innerHTML = players.length === 0
+      ? '<span class="chip" style="opacity:.6">Još niko nije skenirao kod</span>'
+      : players.map(function (p, i) { return '<span class="chip" style="animation-delay:' + (i * 40) + 'ms">' + esc(p.name) + "</span>"; }).join("");
+    // koliko imena je stvarno vidljivo u okviru — ostatak najavljujemo ispod okvira
+    var hiddenCount = 0;
+    if (players.length) {
+      var top = box.getBoundingClientRect().top, limit = top + box.clientHeight;
+      hiddenCount = Array.prototype.filter.call(box.children, function (c) {
+        return c.getBoundingClientRect().bottom > limit + 1;
+      }).length;
+    }
+    document.getElementById("lobbyMore").textContent = hiddenCount > 0 ? "+ još " + hiddenCount + " igrača u sali" : "";
+    document.getElementById("answeredOf").textContent = "od " + players.length + " je odgovorilo";
+  });
+
+  document.getElementById("startBtn").onclick = function () { SFX.start(); hostStart(); };
+  document.getElementById("resetBtn").onclick = function () {
+    if (confirm("Ovo briše sve igrače i rezultate iz ove sesije. Nastaviti?")) { prevScores = {}; hostReset(); }
+  };
+  document.getElementById("revealBtn").onclick = hostReveal;
+  document.getElementById("nextBtn").onclick = hostNext;
+  document.getElementById("finalBtn").onclick = hostShowFinal;
+
+  /* izbor teme — samo na host ekranu, ne dira bazu */
+  var themeChosen = null;
+  function paintThemes() {
+    document.getElementById("themeGrid").innerHTML = THEMES.map(function (t, i) {
+      var on = themeChosen === i, off = themeChosen !== null && !on;
+      return '<div class="themecard" data-i="' + i + '" style="cursor:pointer;overflow:hidden;padding:clamp(12px,1.4vw,26px);border-radius:16px;border:2px solid ' +
+        (on ? "#f97316" : "rgba(174,184,204,.22)") + ';background:' + (on ? "rgba(249,115,22,.14)" : "rgba(174,184,204,.05)") +
+        ';opacity:' + (off ? ".38" : "1") + ';transition:all .28s ease"><div style="font:800 clamp(11px,.9vw,16px)/1 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:' +
+        (on ? "#f97316" : "var(--muted)") + '">' + (i + 1) + '</div><div style="margin-top:6px;font:700 clamp(15px,1.7vw,32px)/1.18 Inter,sans-serif;color:var(--text);text-wrap:balance">' + esc(t.t) + '</div><div style="margin-top:7px;font:500 clamp(11px,1.25vw,24px)/1.4 Inter,sans-serif;color:var(--muted);text-wrap:pretty">' + esc(t.d) + "</div></div>";
+    }).join("");
+    Array.prototype.forEach.call(document.querySelectorAll(".themecard"), function (el) {
+      el.onclick = function () {
+        themeChosen = parseInt(el.getAttribute("data-i"), 10);
+        paintThemes();
+        document.getElementById("themePicked").textContent = "Izabrano: " + THEMES[themeChosen].t;
+        SFX.themePick(); burst(120, 14);
+      };
+    });
+  }
+  document.getElementById("themeBtn").onclick = function () {
+    themeChosen = null;
+    document.getElementById("themePicked").textContent = "";
+    document.getElementById("themeWinnerLine").textContent = (document.getElementById("winnerName").textContent || "Pobednik") + " bira";
+    paintThemes();
+    showOnly("themeScreen");
+  };
+
+  function rankRows(players, useMovement, cap) {
+    var ranked = players.slice().sort(function (a, b) { return b.score - a.score; });
+    var sorted = ranked.slice(0, cap || ranked.length);
+    var hasPrev = Object.keys(prevScores).length > 0 &&
+      Object.keys(prevScores).some(function (k) { return prevScores[k] !== prevScores[Object.keys(prevScores)[0]]; });
+    return sorted.map(function (p, i) {
+      var mv = "";
+      if (useMovement && hasPrev) {
+        var before = prevScores[p.id];
+        if (before !== undefined) {
+          var prevRank = players.filter(function (o) { return (prevScores[o.id] || 0) > before; }).length + 1;
+          var d = prevRank - (i + 1);
+          mv = d > 0 ? '<span class="mv up">▲ ' + d + "</span>" : d < 0 ? '<span class="mv down">▼ ' + Math.abs(d) + "</span>" : '<span class="mv flat">—</span>';
+        }
+      }
+      return '<div class="hostrow ' + (i === 0 ? "top1" : "") + '" style="animation-delay:' + (i * 50) + 'ms"><span class="rank">#' + (i + 1) + '</span><span class="pname">' + esc(p.name) + "</span>" + (mv || '<span class="mv"></span>') + '<span class="pscore">' + p.score + "</span></div>";
+    }).join("");
+  }
+
+  var answersSub = null;
+  function stopAnswersSub() {
+    if (answersSub) { answersSub.ref.off("value", answersSub.cb); answersSub = null; }
+  }
+  function render(state) {
+    if (!state || !state.status) { stopAnswersSub(); clearHostTick(); showOnly("lobbyScreen"); return; }
+
+    if (state.status === "question") {
+      var q = QUESTIONS[state.qIndex];
+      document.getElementById("qProgressHost").innerHTML = "Pitanje " + (state.qIndex + 1) + " <span>/ " + QUESTIONS.length + "</span>";
+      document.getElementById("qTextHost").textContent = q.q;
+      document.getElementById("optionListHost").innerHTML = q.options.map(function (o, i) {
+        return '<div class="hostopt" style="animation-delay:' + (i * 70) + 'ms"><span class="letter">' + LETTERS[i] + '</span><span class="txt">' + esc(o) + "</span></div>";
+      }).join("");
+      showOnly("qScreen");
+      SFX.question();
+      startHostTick(state.questionStartedAt);
+      stopAnswersSub();
+      document.getElementById("answeredCount").textContent = 0;
+      var aRef = answersRef.child(state.qIndex);
+      var aCb = aRef.on("value", function (snap) {
+        document.getElementById("answeredCount").textContent = snap.val() ? Object.keys(snap.val()).length : 0;
+      });
+      answersSub = { ref: aRef, cb: aCb };
+
+    } else if (state.status === "reveal") {
+      stopAnswersSub();
+      clearHostTick();
+      var q2 = QUESTIONS[state.qIndex];
+      document.getElementById("revProgressHost").innerHTML = "Pitanje " + (state.qIndex + 1) + " <span>/ " + QUESTIONS.length + "</span>";
+      document.getElementById("qTextRevealHost").textContent = q2.q;
+      document.getElementById("correctLine").textContent = "Tačan odgovor: " + q2.options[q2.correct];
+      playersRef.once("value").then(function (ps) {
+        var snapshot = {};
+        listPlayers(ps.val()).forEach(function (p) { snapshot[p.id] = p.score; });
+        prevScores = snapshot;
+      });
+      answersRef.child(state.qIndex).once("value").then(function (snap) {
+        var answers = Object.values(snap.val() || {});
+        var total = answers.length || 1;
+        SFX.reveal(answers.filter(function (a) { return a.correct; }).length / total);
+        document.getElementById("barsWrap").innerHTML = q2.options.map(function (opt, i) {
+          var c = answers.filter(function (a) { return a.choice === i; }).length;
+          var pct = Math.round((c / total) * 100);
+          var ok = i === q2.correct;
+          return '<div class="bar-row"><div class="bar-label ' + (ok ? "correct" : "") + '"><span>' + LETTERS[i] + " · " + esc(opt) + (ok ? " ✓" : "") + "</span><span>" + c + '</span></div><div class="bar-track"><div class="bar-fill ' + (ok ? "correct" : "") + '" style="width:' + pct + '%"></div></div></div>';
+        }).join("");
+        showOnly("revealScreenHost");
+      });
+
+    } else if (state.status === "leaderboard") {
+      clearHostTick();
+      playersRef.once("value").then(function (snap) {
+        var players = listPlayers(snap.val());
+        var list = document.getElementById("leaderboardList");
+        document.getElementById("boardAfter").textContent = "Posle " + Math.min(state.qIndex + 1, QUESTIONS.length) + " od " + QUESTIONS.length + " pitanja";
+        list.innerHTML = "";
+        showOnly("leaderboardScreen");
+        SFX.board();
+        // koliko redova stane u slobodnu visinu — nikad ne režemo bez najave
+        var slot = list.clientHeight;
+        var cap = Math.max(3, Math.min(10, Math.floor(slot / 52)));
+        list.innerHTML = rankRows(players, true, cap);
+        var rest = players.length - Math.min(cap, players.length);
+        document.getElementById("boardMore").textContent = rest > 0 ? "+ još " + rest + " igrača" : "";
+      });
+
+    } else if (state.status === "end") {
+      clearHostTick();
+      playersRef.once("value").then(function (snap) {
+        var players = listPlayers(snap.val()).sort(function (a, b) { return b.score - a.score; });
+        var w = players[0] || { name: "—", score: 0 };
+        document.getElementById("winnerName").textContent = w.name;
+        document.getElementById("winnerBg").textContent = w.name;
+        document.getElementById("winnerScore").textContent = w.score || 0;
+        showOnly("finalScreenHost");
+        SFX.winner();
+        burst(220, 18); burst(140, 15, 900); burst(100, 13, 1800);
+      });
+    }
+  }
+
+  stateRef.on("value", function (snap) { render(snap.val()); });
+  </script>
+</body>
+</html>
